@@ -1,17 +1,18 @@
 const express = require('express');
 const router  = express.Router();
 const {
-  getOpportunities, getOpportunity, createOpportunity,
-  updateOpportunity, archiveOpportunity, getMyOpportunities,
+  getOpportunities, getFeatured, getMyOpportunities,
+  getOpportunity, createOpportunity, updateOpportunity, archiveOpportunity,
 } = require('../controllers/opportunityController');
 const { protect, authorize, requireApprovedOrganizer } = require('../middleware/authMiddleware');
 
 // Public
-router.get('/',    getOpportunities);
-router.get('/my',  protect, authorize('organizer'), getMyOpportunities);
-router.get('/:id', getOpportunity);
+router.get('/',          getOpportunities);
+router.get('/featured',  getFeatured);
+router.get('/:id',       getOpportunity);
 
-// Organizer only
+// Organizer
+router.get('/organizer/my', protect, authorize('organizer'), getMyOpportunities);
 router.post('/',    protect, authorize('organizer'), requireApprovedOrganizer, createOpportunity);
 router.put('/:id',  protect, authorize('organizer', 'admin'), updateOpportunity);
 router.delete('/:id', protect, authorize('organizer', 'admin'), archiveOpportunity);
