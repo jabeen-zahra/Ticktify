@@ -1,7 +1,4 @@
-/**
- * Standard API response format for Tictify.
- * All controllers use these helpers for consistency.
- */
+const jwt = require('jsonwebtoken');
 
 const sendSuccess = (res, data = {}, message = 'Success', statusCode = 200) => {
   return res.status(statusCode).json({
@@ -20,7 +17,7 @@ const sendError = (res, message = 'Something went wrong', statusCode = 500) => {
 
 const sendPaginated = (res, data, page, limit, total) => {
   return res.status(200).json({
-    success: true,
+    success:    true,
     count:      data.length,
     total,
     page:       Number(page),
@@ -29,34 +26,28 @@ const sendPaginated = (res, data, page, limit, total) => {
   });
 };
 
-/**
- * Generate JWT and set as cookie + return token
- */
 const sendTokenResponse = (user, statusCode, res) => {
-  const jwt = require('jsonwebtoken');
-
-  const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRE || '7d',
-  });
+  const token = jwt.sign(
+    { id: user._id, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRE || '7d' }
+  );
 
   const cookieOptions = {
-    expires: new Date(
-      Date.now() + (parseInt(process.env.JWT_COOKIE_EXPIRE) || 7) * 24 * 60 * 60 * 1000
-    ),
+    expires:  new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     httpOnly: true,
-    secure:   process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    secure:   false,
+    sameSite: 'lax',
   };
 
-  res.cookie('token', token, cookieOptions);
-
-  // Remove sensitive fields before sending
   const userObj = user.toObject();
   delete userObj.password;
   delete userObj.resetPasswordToken;
   delete userObj.resetPasswordExpire;
 
-  return res.status(statusCode).json({
+  // Express v5 fix — set cookie separately, then send json
+  res.cookie('token', token, cookieOptions);
+  res.status(statusCode).json({
     success: true,
     token,
     user: userObj,
