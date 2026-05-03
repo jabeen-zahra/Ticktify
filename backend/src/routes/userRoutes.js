@@ -1,22 +1,14 @@
 const express = require('express');
 const router  = express.Router();
+const { getMe, updateProfile, changePassword, changeEmail, deactivateAccount } = require('../controllers/userController');
 const { protect } = require('../middleware/authMiddleware');
 
-// ── @desc    Update profile
-// ── @route   PUT /api/users/profile
-router.put('/profile', protect, async (req, res, next) => {
-  try {
-    const User = require('../models/User');
-    const { name, university, degreeLevel, avatar } = req.body;
-    const user = await User.findByIdAndUpdate(
-      req.user.id,
-      { $set: { name, university, degreeLevel, avatar } },
-      { new: true, runValidators: true }
-    );
-    res.json({ success: true, user });
-  } catch (err) {
-    next(err);
-  }
-});
+router.use(protect);
+
+router.get('/me',              getMe);
+router.put('/profile',         updateProfile);
+router.put('/change-password', changePassword);
+router.put('/change-email',    changeEmail);
+router.delete('/me',           deactivateAccount);
 
 module.exports = router;

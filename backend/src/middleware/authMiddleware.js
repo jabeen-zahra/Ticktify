@@ -1,53 +1,59 @@
-const jwt = require('jsonwebtoken');
+const jwt  = require('jsonwebtoken');
 const User = require('../models/User');
 
-// ── Protect: require valid JWT ────────────────────────────────────────────────
 const protect = async (req, res, next) => {
   let token;
 
-  // Check Authorization header (Bearer token)
-  if (req.headers.authorization?.startsWith('Bearer ')) {
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer ') &&
+    req.headers.authorization.length > 7
+  ) {
     token = req.headers.authorization.split(' ')[1];
-  }
-  // Alternatively check cookie
-  else if (req.cookies?.token) {
+  } else if (req.cookies?.token && req.cookies.token !== 'none') {
     token = req.cookies.token;
   }
 
   if (!token) {
-    return res.status(401).json({ success: false, message: 'Not authorized — no token' });
+    return res.status(401).json({ success: false, message: 'Not authorized — no token provided' });
   }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id).select('-password');
 
-    if (!user || !user.isActive) {
-      return res.status(401).json({ success: false, message: 'User not found or deactivated' });
+    const user = await User.findById(decoded.id)
+      .select('-password -resetPasswordToken -resetPasswordExpire');
+
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'User account no longer exists' });
+    }
+    if (!user.isActive) {
+      return res.status(401).json({ success: false, message: 'Account has been deactivated' });
     }
 
     req.user = user;
     next();
   } catch (err) {
-    return res.status(401).json({ success: false, message: 'Token invalid or expired' });
+    if (err.name === 'TokenExpiredError') {
+      return res.status(401).json({ success: false, message: 'Session expired — please login again' });
+    }
+    return res.status(401).json({ success: false, message: 'Invalid token' });
   }
 };
 
-// ── Authorize: restrict to specific roles ─────────────────────────────────────
-// Usage: authorize('admin') or authorize('admin', 'organizer')
-const authorize = (...roles) => {
-  return (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({
-        success: false,
-        message: `Role '${req.user.role}' is not authorized for this action`,
-      });
-    }
-    next();
-  };
+const authorize = (...roles) => (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ success: false, message: 'Not authenticated' });
+  }
+  if (!roles.includes(req.user.role)) {
+    return res.status(403).json({
+      success: false,
+      message: `Access denied — role '${req.user.role}' is not permitted for this action`,
+    });
+  }
+  next();
 };
 
-// ── Organizer must be approved ────────────────────────────────────────────────
 const requireApprovedOrganizer = (req, res, next) => {
   if (
     req.user.role !== 'organizer' ||
@@ -55,7 +61,7 @@ const requireApprovedOrganizer = (req, res, next) => {
   ) {
     return res.status(403).json({
       success: false,
-      message: 'Your organizer account is pending approval',
+      message: 'Your organizer account is pending admin approval before you can post',
     });
   }
   next();

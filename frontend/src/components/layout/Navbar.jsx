@@ -57,12 +57,14 @@ function UserDropdown({ user, onLogout }) {
 
   const initials = user.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2) || 'U';
 
-  const menuItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', action: () => navigate(getDashLink()) },
-    { icon: User,            label: 'Profile',   action: () => navigate('/profile') },
-    ...(user.role === 'admin'     ? [{ icon: Shield,    label: 'Admin Panel',        action: () => navigate('/admin') }] : []),
-    ...(user.role === 'organizer' ? [{ icon: Building2, label: 'Organizer Panel',    action: () => navigate('/organizer') }] : []),
-  ];
+
+   const menuItems = [
+  { icon: LayoutDashboard, label: 'Dashboard', action: () => navigate(getDashLink()) },
+  { icon: User,            label: 'Settings',  action: () => navigate('/settings') },
+  ...(user.role === 'admin'     ? [{ icon: Shield,    label: 'Admin Panel',     action: () => navigate('/admin') }]     : []),
+  ...(user.role === 'organizer' ? [{ icon: Building2, label: 'Organizer Panel', action: () => navigate('/organizer') }] : []),
+];
+   
 
   return (
     <div className="relative" ref={ref}>

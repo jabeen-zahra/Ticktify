@@ -1,4 +1,3 @@
-// ── Opportunity Categories ────────────────────────────────────────────────────
 const OPPORTUNITY_TYPES = ['event', 'competition', 'scholarship', 'workshop'];
 
 const OPPORTUNITY_CATEGORIES = [
@@ -13,36 +12,61 @@ const OPPORTUNITY_CATEGORIES = [
   'other',
 ];
 
-const DEGREE_LEVELS = ['undergraduate', 'graduate', 'phd', 'open'];
+// NOTE: Does NOT include 'open' — 'open' is a separate eligibility value
+const DEGREE_LEVELS = ['undergraduate', 'graduate', 'phd'];
 
-const CITIES = ['lahore', 'karachi', 'islamabad', 'peshawar', 'quetta', 'online', 'other'];
+const CITIES = [
+  'lahore',
+  'karachi',
+  'islamabad',
+  'rawalpindi',
+  'faisalabad',
+  'peshawar',
+  'quetta',
+  'multan',
+  'hyderabad',
+  'other',
+];
 
-// ── User Roles ────────────────────────────────────────────────────────────────
 const ROLES = {
   STUDENT:   'student',
   ORGANIZER: 'organizer',
   ADMIN:     'admin',
 };
 
-// ── Organizer Status ──────────────────────────────────────────────────────────
 const ORGANIZER_STATUS = {
   PENDING:  'pending',
   APPROVED: 'approved',
   REJECTED: 'rejected',
 };
 
-// ── Opportunity Status ────────────────────────────────────────────────────────
 const OPPORTUNITY_STATUS = {
   DRAFT:    'draft',
-  PENDING:  'pending',    // awaiting admin review (first-time organizers)
+  PENDING:  'pending',
   ACTIVE:   'active',
-  ARCHIVED: 'archived',   // past deadline — kept for history
+  ARCHIVED: 'archived',
   REJECTED: 'rejected',
 };
 
-// ── Pagination ────────────────────────────────────────────────────────────────
+const APPLICATION_STATUS = {
+  SAVED:    'saved',
+  APPLIED:  'applied',
+  ACCEPTED: 'accepted',
+  REJECTED: 'rejected',
+};
+
+const NOTIFICATION_TYPES = {
+  DEADLINE_REMINDER:  'deadline_reminder',
+  NEW_OPPORTUNITY:    'new_opportunity',
+  ORGANIZER_APPROVED: 'organizer_approved',
+  ORGANIZER_REJECTED: 'organizer_rejected',
+  LISTING_APPROVED:   'listing_approved',
+  LISTING_REJECTED:   'listing_rejected',
+};
+
 const DEFAULT_PAGE_SIZE = 12;
-const MAX_PAGE_SIZE = 50;
+const MAX_PAGE_SIZE     = 50;
+const PASSWORD_RESET_EXPIRE_MINUTES = 30;
 
 module.exports = {
   OPPORTUNITY_TYPES,
@@ -52,6 +76,9 @@ module.exports = {
   ROLES,
   ORGANIZER_STATUS,
   OPPORTUNITY_STATUS,
+  APPLICATION_STATUS,
+  NOTIFICATION_TYPES,
   DEFAULT_PAGE_SIZE,
   MAX_PAGE_SIZE,
+  PASSWORD_RESET_EXPIRE_MINUTES,
 };

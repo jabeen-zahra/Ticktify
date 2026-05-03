@@ -1,30 +1,38 @@
 const mongoose = require('mongoose');
+const { NOTIFICATION_TYPES } = require('../config/constants');
 
 const notificationSchema = new mongoose.Schema(
   {
     user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      type:     mongoose.Schema.Types.ObjectId,
+      ref:      'User',
       required: true,
+      index:    true,
     },
     type: {
-      type: String,
-      enum: ['deadline_reminder', 'new_opportunity', 'organizer_approved', 'organizer_rejected', 'listing_approved', 'listing_rejected'],
+      type:     String,
+      enum:     Object.values(NOTIFICATION_TYPES),
       required: true,
     },
-    title:   { type: String, required: true },
-    message: { type: String, required: true },
-    link:    { type: String, default: null },     // Frontend route to navigate to
+    title:   { type: String, required: true, maxlength: 120 },
+    message: { type: String, required: true, maxlength: 500 },
+    link:    { type: String, default: null },
     isRead:  { type: Boolean, default: false },
-    // Reference to related document (optional)
-    refModel: { type: String, enum: ['Opportunity', 'User', null], default: null },
-    refId:    { type: mongoose.Schema.Types.ObjectId, default: null },
+    refModel: {
+      type:    String,
+      enum:    ['Opportunity', 'User', null],
+      default: null,
+    },
+    refId: { type: mongoose.Schema.Types.ObjectId, default: null },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
 notificationSchema.index({ user: 1, isRead: 1, createdAt: -1 });
+// Auto-delete notifications older than 90 days
+notificationSchema.index(
+  { createdAt: 1 },
+  { expireAfterSeconds: 90 * 24 * 60 * 60 }
+);
 
 module.exports = mongoose.model('Notification', notificationSchema);

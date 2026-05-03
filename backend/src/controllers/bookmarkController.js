@@ -21,6 +21,22 @@ const getBookmarks = async (req, res, next) => {
   }
 };
 
+// ── @desc    Check if opportunity is bookmarked by current student
+// ── @route   GET /api/bookmarks/check/:opportunityId
+// ── @access  Private (student)
+const checkBookmark = async (req, res, next) => {
+  try {
+    const bookmark = await Bookmark.findOne({
+      user:        req.user.id,
+      opportunity: req.params.opportunityId,
+    }).lean();
+
+    sendSuccess(res, { isBookmarked: !!bookmark, bookmark: bookmark || null });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // ── @desc    Add a bookmark
 // ── @route   POST /api/bookmarks/:opportunityId
 // ── @access  Private (student)
@@ -36,8 +52,8 @@ const addBookmark = async (req, res, next) => {
     if (existing) return sendError(res, 'Already bookmarked', 400);
 
     const bookmark = await Bookmark.create({
-      user:        req.user.id,
-      opportunity: req.params.opportunityId,
+      user:          req.user.id,
+      opportunity:   req.params.opportunityId,
       emailReminder: req.body.emailReminder ?? true,
     });
 
@@ -79,9 +95,27 @@ const removeBookmark = async (req, res, next) => {
 // ── @access  Private (student)
 const updateBookmark = async (req, res, next) => {
   try {
+    const allowed = {};
+    const VALID_STATUS = ['saved', 'applied', 'accepted', 'rejected'];
+
+    if (req.body.applicationStatus !== undefined) {
+      if (!VALID_STATUS.includes(req.body.applicationStatus))
+        return sendError(res, 'Invalid applicationStatus', 400);
+      allowed.applicationStatus = req.body.applicationStatus;
+    }
+    if (req.body.notes !== undefined) {
+      allowed.notes = req.body.notes?.toString().slice(0, 500) || null;
+    }
+    if (req.body.emailReminder !== undefined) {
+      allowed.emailReminder = Boolean(req.body.emailReminder);
+    }
+
+    if (Object.keys(allowed).length === 0)
+      return sendError(res, 'No valid fields provided', 400);
+
     const bookmark = await Bookmark.findOneAndUpdate(
       { user: req.user.id, opportunity: req.params.opportunityId },
-      { $set: { applicationStatus: req.body.applicationStatus, notes: req.body.notes, emailReminder: req.body.emailReminder } },
+      { $set: allowed },
       { new: true, runValidators: true }
     );
 
@@ -92,4 +126,10 @@ const updateBookmark = async (req, res, next) => {
   }
 };
 
-module.exports = { getBookmarks, addBookmark, removeBookmark, updateBookmark };
+module.exports = {
+  getBookmarks,
+  checkBookmark,
+  addBookmark,
+  removeBookmark,
+  updateBookmark,
+};

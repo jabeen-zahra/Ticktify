@@ -7,36 +7,28 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser]       = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // ── On mount: restore session from token ───────────────────────────────────
+  // On mount: restore session via httpOnly cookie — no localStorage needed
   useEffect(() => {
-    const token = localStorage.getItem('tictify_token');
-    if (token) {
-      api.get('/auth/me')
-        .then(({ data }) => setUser(data.user))
-        .catch(() => localStorage.removeItem('tictify_token'))
-        .finally(() => setLoading(false));
-    } else {
-      setLoading(false);
-    }
+    api.get('/auth/me')
+      .then(({ data }) => setUser(data.user))
+      .catch(() => setUser(null))
+      .finally(() => setLoading(false));
   }, []);
 
   const login = async (email, password) => {
     const { data } = await api.post('/auth/login', { email, password });
-    localStorage.setItem('tictify_token', data.token);
     setUser(data.user);
     return data.user;
   };
 
   const register = async (payload) => {
     const { data } = await api.post('/auth/register', payload);
-    localStorage.setItem('tictify_token', data.token);
     setUser(data.user);
     return data.user;
   };
 
   const logout = async () => {
     try { await api.post('/auth/logout'); } catch (_) {}
-    localStorage.removeItem('tictify_token');
     setUser(null);
   };
 
@@ -44,9 +36,9 @@ export const AuthProvider = ({ children }) => {
     user,
     loading,
     isAuthenticated: !!user,
-    isStudent:   user?.role === 'student',
-    isOrganizer: user?.role === 'organizer',
-    isAdmin:     user?.role === 'admin',
+    isStudent:       user?.role === 'student',
+    isOrganizer:     user?.role === 'organizer',
+    isAdmin:         user?.role === 'admin',
     login,
     register,
     logout,

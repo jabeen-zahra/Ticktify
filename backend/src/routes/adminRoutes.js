@@ -10,18 +10,15 @@ const { protect, authorize } = require('../middleware/authMiddleware');
 
 router.use(protect, authorize('admin'));
 
-// Stats
 router.get('/stats', getStats);
 
-// Users
-router.get('/users',                    getAllUsers);
+router.get('/users',                     getAllUsers);
 router.patch('/users/:id/toggle-active', toggleUserActive);
 
-// Organizers
 router.get('/organizers/pending',        getPendingOrganizers);
 router.patch('/organizers/:id/review',   reviewOrganizer);
 
-// Listings
+// IMPORTANT: /listings/pending before /listings/:id
 router.get('/listings',                  getAllListings);
 router.get('/listings/pending',          getPendingListings);
 router.patch('/listings/:id/review',     reviewListing);

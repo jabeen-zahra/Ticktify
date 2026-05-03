@@ -1,52 +1,45 @@
-// ── 404 Not Found ─────────────────────────────────────────────────────────────
 const notFound = (req, res, next) => {
-  const error = new Error(`Route not found: ${req.originalUrl}`);
+  const error = new Error(`Route not found: ${req.method} ${req.originalUrl}`);
   res.status(404);
   next(error);
 };
 
-// ── Global Error Handler ──────────────────────────────────────────────────────
-const errorHandler = (err, req, res, next) => {
-  let statusCode = res.statusCode === 200 ? 500 : res.statusCode;
-  let message = err.message;
+const errorHandler = (err, req, res, next) => { // eslint-disable-line no-unused-vars
+  let statusCode = res.statusCode && res.statusCode !== 200 ? res.statusCode : 500;
+  let message    = err.message || 'Internal Server Error';
 
-  // Mongoose: bad ObjectId
   if (err.name === 'CastError' && err.kind === 'ObjectId') {
     statusCode = 404;
-    message = 'Resource not found';
+    message    = 'Resource not found';
   }
 
-  // Mongoose: duplicate key
   if (err.code === 11000) {
-    statusCode = 400;
-    const field = Object.keys(err.keyValue)[0];
-    message = `${field} already exists`;
+    statusCode = 409;
+    const field = Object.keys(err.keyValue || {})[0] || 'field';
+    message    = `${field.charAt(0).toUpperCase() + field.slice(1)} already exists`;
   }
 
-  // Mongoose: validation error
   if (err.name === 'ValidationError') {
     statusCode = 400;
-    message = Object.values(err.errors)
-      .map((e) => e.message)
-      .join(', ');
+    message    = Object.values(err.errors).map((e) => e.message).join(', ');
   }
 
-  // JWT errors
-  if (err.name === 'JsonWebTokenError') {
-    statusCode = 401;
-    message = 'Invalid token';
-  }
-  if (err.name === 'TokenExpiredError') {
-    statusCode = 401;
-    message = 'Token expired';
+  if (err.name === 'JsonWebTokenError') { statusCode = 401; message = 'Invalid token'; }
+  if (err.name === 'TokenExpiredError') { statusCode = 401; message = 'Token expired'; }
+  if (err.name === 'NotBeforeError')    { statusCode = 401; message = 'Token not yet active'; }
+  if (err.message?.includes('CORS'))   { statusCode = 403; message = 'CORS policy violation'; }
+  if (err.type === 'entity.too.large') { statusCode = 413; message = 'Request payload too large'; }
+
+  if (statusCode >= 500 && process.env.NODE_ENV !== 'test') {
+    console.error(`[ERROR] ${statusCode} ${req.method} ${req.originalUrl}:`, err.message);
   }
 
-  res.status(statusCode).json({
-    success: false,
-    message,
-    // Show stack trace only in development
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
-  });
+  const response = { success: false, message };
+  if (process.env.NODE_ENV === 'development') {
+    response.stack = err.stack;
+  }
+
+  res.status(statusCode).json(response);
 };
 
 module.exports = { notFound, errorHandler };
